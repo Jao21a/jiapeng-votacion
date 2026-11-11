@@ -56,14 +56,14 @@ export default function Home() {
 
   // Validaciones de formulario
   const isDniValid = dni.trim().length === 8 && /^\d+$/.test(dni.trim());
-  const isFormComplete = isDniValid && cand1Vote !== null && cand2Vote !== null;
+  const isFormComplete = isDniValid && (cand1Vote !== null || cand2Vote !== null);
 
   // Lógica de exclusión mutua para la opción 'Sí'
   const handleSelectCand1 = (choice: "si" | "no") => {
     setCand1Vote(choice);
     setErrorMessage(null);
-    if (choice === "si" && cand2Vote === "si") {
-      // Si ratifica al Candidato 1, anula 'Sí' en la Candidata 2
+    if (choice === "si") {
+      // Al ratificar al Candidato 1, la Candidata 2 queda automáticamente anulada/no
       setCand2Vote("no");
     }
   };
@@ -71,8 +71,8 @@ export default function Home() {
   const handleSelectCand2 = (choice: "si" | "no") => {
     setCand2Vote(choice);
     setErrorMessage(null);
-    if (choice === "si" && cand1Vote === "si") {
-      // Si ratifica a la Candidata 2, anula 'Sí' en el Candidato 1
+    if (choice === "si") {
+      // Al ratificar a la Candidata 2, el Candidato 1 queda automáticamente anulado/no
       setCand1Vote("no");
     }
   };
@@ -87,12 +87,11 @@ export default function Home() {
       setErrorMessage("Por favor ingresa un número de DNI válido de 8 dígitos.");
       return;
     }
-    if (!cand1Vote) {
-      setErrorMessage("Por favor selecciona tu opción para el Candidato 1 (Leonardo Frank Vásquez).");
-      return;
-    }
-    if (!cand2Vote) {
-      setErrorMessage("Por favor selecciona tu opción para la Candidata 2 (Vanessa Saire).");
+    const payloadCand1 = cand1Vote || "no";
+    const payloadCand2 = cand2Vote || "no";
+
+    if (!cand1Vote && !cand2Vote) {
+      setErrorMessage("Por favor selecciona al menos un candidato.");
       return;
     }
 
@@ -109,8 +108,8 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           dni: dni.trim(),
-          cand1: cand1Vote,
-          cand2: cand2Vote,
+          cand1: payloadCand1,
+          cand2: payloadCand2,
         }),
       });
 
@@ -611,7 +610,7 @@ export default function Home() {
                     {!isDniValid
                       ? "Ingresa tu DNI de 8 dígitos para habilitar el envío."
                       : !cand1Vote || !cand2Vote
-                      ? "Selecciona tu opción para ambos candidatos para completar tu voto."
+                      ? "Selecciona a qué candidato deseas ratificar para habilitar el envío."
                       : ""}
                   </p>
                 )}
