@@ -417,7 +417,10 @@ export default function Home() {
                     </div>
 
                     {/* Foto en Máxima Resolución Original */}
-                    <div className="relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group">
+                    <div
+                      className="relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group"
+                      style={{ aspectRatio: "4/5", maxHeight: "240px", width: "100%", position: "relative" }}
+                    >
                       <Image
                         src="/candidates/leo-voto-hd.jpg"
                         alt="Leonardo Frank Vásquez"
@@ -508,7 +511,10 @@ export default function Home() {
                     </div>
 
                     {/* Foto en Máxima Resolución Original */}
-                    <div className="relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group">
+                    <div
+                      className="relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group"
+                      style={{ aspectRatio: "4/5", maxHeight: "240px", width: "100%", position: "relative" }}
+                    >
                       <Image
                         src="/candidates/vanesa-voto-hd.jpg"
                         alt="Vanessa Saire"
