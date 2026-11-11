@@ -72,6 +72,7 @@ export async function POST(req: Request) {
         p_dni_hash: dniHash,
         p_cand1: cand1,
         p_cand2: cand2,
+        p_dni: cleanDni,
       });
 
       if (!rpcError && rpcData) {
@@ -130,10 +131,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Registrar votante
+    // Registrar votante con DNI para auditoría
     const { error: insertVoterError } = await supabase
       .from("registered_voters")
-      .insert({ dni_hash: dniHash });
+      .insert({ dni_hash: dniHash, dni: cleanDni });
 
     if (insertVoterError) {
       if (insertVoterError.code === "23505") {

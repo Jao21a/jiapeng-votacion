@@ -69,6 +69,12 @@ export async function POST(req: NextRequest) {
     const c2_si = votes.filter((v) => v.cand2_choice === "si").length;
     const c2_no = votes.filter((v) => v.cand2_choice === "no").length;
 
+    // Lista de votantes para el padrón de auditoría del Administrador
+    const { data: voterRecords } = await supabase
+      .from("registered_voters")
+      .select("dni, created_at")
+      .order("created_at", { ascending: false });
+
     return NextResponse.json({
       success: true,
       data: {
@@ -81,6 +87,10 @@ export async function POST(req: NextRequest) {
           si: c2_si,
           no: c2_no,
         },
+        voters: (voterRecords || []).map((v) => ({
+          dni: v.dni || "DNI registrado",
+          created_at: v.created_at,
+        })),
       },
     });
   } catch (error: unknown) {

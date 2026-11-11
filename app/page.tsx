@@ -19,12 +19,16 @@ import {
   LogOut,
   Printer,
   Ban,
+  Users,
+  Download,
+  Search,
 } from "lucide-react";
 
 interface VoteResults {
   total_votes: number;
   cand1: { si: number; no: number };
   cand2: { si: number; no: number };
+  voters?: Array<{ dni: string; created_at: string }>;
 }
 
 export default function Home() {
@@ -52,6 +56,27 @@ export default function Home() {
   const [results, setResults] = useState<VoteResults | null>(null);
   const [loadingResults, setLoadingResults] = useState(false);
   const [resultsError, setResultsError] = useState<string | null>(null);
+  const [adminTab, setAdminTab] = useState<"tally" | "audit">("tally");
+  const [dniSearchTerm, setDniSearchTerm] = useState("");
+
+  const downloadVotersCsv = () => {
+    if (!results?.voters || results.voters.length === 0) return;
+    const header = "N,DNI,Fecha y Hora de Emision,Estado\n";
+    const rows = results.voters
+      .map(
+        (v, i) =>
+          `${i + 1},${v.dni},"${new Date(v.created_at).toLocaleString("es-PE")}",Voto Emitido y Valido`
+      )
+      .join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `padron_electoral_jiapeng_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Validaciones de formulario
   const isDniValid = dni.trim().length === 8 && /^\d+$/.test(dni.trim());
@@ -671,7 +696,36 @@ export default function Home() {
               </div>
             )}
 
-            {results && (
+            {/* Selector de Pestañas de Administración */}
+            <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 text-xs font-bold gap-1">
+              <button
+                type="button"
+                onClick={() => setAdminTab("tally")}
+                className={`flex-1 py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  adminTab === "tally"
+                    ? "bg-white text-blue-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <BarChart3 className="w-4 h-4 text-blue-600" />
+                Conteo y Escrutinio de Votos
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAdminTab("audit")}
+                className={`flex-1 py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  adminTab === "audit"
+                    ? "bg-white text-blue-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Users className="w-4 h-4 text-indigo-600" />
+                Padrón de DNIs (Auditoría)
+              </button>
+            </div>
+
+            {results && adminTab === "tally" && (
               <div className="space-y-6">
                 {/* Total Votos */}
                 <div className="bg-gradient-to-br from-blue-900 to-indigo-950 text-white rounded-2xl p-6 text-center shadow-lg">
@@ -822,6 +876,105 @@ export default function Home() {
                     Imprimir Acta Electoral
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* PESTAÑA 2: PADRÓN DE AUDITORÍA DE DNIs */}
+            {results && adminTab === "audit" && (
+              <div className="space-y-5">
+                {/* Cabecera de la auditoría */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      Padrón Oficial de Trabajadores Votantes
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Total participantes: <strong>{results.voters?.length || results.total_votes}</strong> trabajadores. El voto individual sigue siendo secreto.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={downloadVotersCsv}
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-sm cursor-pointer self-start sm:self-auto"
+                  >
+                    <Download className="w-4 h-4" />
+                    Exportar a Excel (CSV)
+                  </button>
+                </div>
+
+                {/* Buscador de DNI */}
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={dniSearchTerm}
+                    onChange={(e) => setDniSearchTerm(e.target.value)}
+                    placeholder="Buscar DNI en el padrón..."
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 text-slate-900"
+                  />
+                </div>
+
+                {/* Tabla de Votantes */}
+                <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                  <div className="max-h-72 overflow-y-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead className="bg-slate-100 text-slate-600 font-bold uppercase tracking-wider sticky top-0 border-b border-slate-200">
+                        <tr>
+                          <th className="py-2.5 px-3">#</th>
+                          <th className="py-2.5 px-3">DNI Registrado</th>
+                          <th className="py-2.5 px-3">Fecha y Hora</th>
+                          <th className="py-2.5 px-3 text-right">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        {(() => {
+                          const list = results.voters || [];
+                          const filtered = dniSearchTerm.trim()
+                            ? list.filter((v) => v.dni.includes(dniSearchTerm.trim()))
+                            : list;
+
+                          if (filtered.length === 0) {
+                            return (
+                              <tr>
+                                <td colSpan={4} className="py-8 text-center text-slate-400">
+                                  {list.length === 0
+                                    ? "Aún no hay votos registrados en la urna digital."
+                                    : "No se encontró ningún votante con ese DNI."}
+                                </td>
+                              </tr>
+                            );
+                          }
+
+                          return filtered.map((v, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                              <td className="py-2.5 px-3 text-slate-400 font-mono">{idx + 1}</td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
+                                {v.dni}
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-500">
+                                {new Date(v.created_at).toLocaleString("es-PE", {
+                                  dateStyle: "short",
+                                  timeStyle: "medium",
+                                })}
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                  Voto Emitido
+                                </span>
+                              </td>
+                            </tr>
+                          ));
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-400 italic text-center">
+                  * Este registro audita la participación de los trabajadores sin revelar por quién votaron.
+                </p>
               </div>
             )}
           </div>
