@@ -28,20 +28,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Intentar obtener resultados mediante función RPC
-    try {
-      const { data: rpcData, error: rpcError } = await supabase.rpc("get_election_results");
-      if (!rpcError && rpcData) {
-        return NextResponse.json({
-          success: true,
-          data: rpcData,
-        });
-      }
-    } catch {
-      // Continuar con fallback si RPC no está disponible
-    }
-
-    // 2. Consulta directa a la tabla de votos
+    // 1. Obtener votos de la urna digital anónima
     const { data: votes, error: votesError } = await supabase
       .from("votes")
       .select("cand1_choice, cand2_choice");
@@ -63,17 +50,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const total = votes.length;
-    const c1_si = votes.filter((v) => v.cand1_choice === "si").length;
-    const c1_no = votes.filter((v) => v.cand1_choice === "no").length;
-    const c2_si = votes.filter((v) => v.cand2_choice === "si").length;
-    const c2_no = votes.filter((v) => v.cand2_choice === "no").length;
+    const total = votes ? votes.length : 0;
+    const c1_si = votes ? votes.filter((v) => v.cand1_choice === "si").length : 0;
+    const c1_no = votes ? votes.filter((v) => v.cand1_choice === "no").length : 0;
+    const c2_si = votes ? votes.filter((v) => v.cand2_choice === "si").length : 0;
+    const c2_no = votes ? votes.filter((v) => v.cand2_choice === "no").length : 0;
 
-    // Lista de votantes para el padrón de auditoría del Administrador
-    const { data: voterRecords } = await supabase
+    // 2. Obtener lista de votantes para el padrón de auditoría del Administrador
+    const { data: voterRecords, error: votersError } = await supabase
       .from("registered_voters")
       .select("dni, created_at")
       .order("created_at", { ascending: false });
+
+    if (votersError) {
+      console.error("Error al obtener padron de votantes:", votersError);
+    }
+
+    const formattedVoters = (voterRecords || []).map((v) => ({
+      dni: v.dni || "DNI registrado",
+      created_at: v.created_at,
+    }));
 
     return NextResponse.json({
       success: true,
@@ -87,10 +83,7 @@ export async function POST(req: NextRequest) {
           si: c2_si,
           no: c2_no,
         },
-        voters: (voterRecords || []).map((v) => ({
-          dni: v.dni || "DNI registrado",
-          created_at: v.created_at,
-        })),
+        voters: formattedVoters,
       },
     });
   } catch (error: unknown) {
