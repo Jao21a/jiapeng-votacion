@@ -12,8 +12,6 @@ import {
   Vote,
   BarChart3,
   RefreshCw,
-  FileCheck2,
-  Copy,
   UserCheck,
   KeyRound,
   LogOut,
@@ -45,7 +43,6 @@ export default function Home() {
     code: string;
     timestamp: string;
   } | null>(null);
-  const [copiedReceipt, setCopiedReceipt] = useState(false);
 
   // Estados de Administración (Protegido por código)
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -185,14 +182,6 @@ export default function Home() {
     fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
     fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
     fire(0.1, { spread: 120, startVelocity: 45 });
-  };
-
-  const copyReceiptCode = () => {
-    if (receiptData?.code) {
-      navigator.clipboard.writeText(receiptData.code);
-      setCopiedReceipt(true);
-      setTimeout(() => setCopiedReceipt(false), 2500);
-    }
   };
 
   // Autenticación de Administrador
@@ -1021,42 +1010,15 @@ export default function Home() {
               Tu participación en el <strong>Proceso Electoral Jiapeng 2026</strong> ha sido contabilizada de manera <strong>100% anónima e irreversible</strong>.
             </p>
 
-            {/* Constancia Digital */}
-            <div className="mt-6 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left space-y-2.5">
-              <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
-                <span className="text-[11px] uppercase font-bold text-slate-500 flex items-center gap-1">
-                  <FileCheck2 className="w-3.5 h-3.5 text-blue-600" />
-                  Constancia Digital
-                </span>
-                <span className="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                  Válido
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[11px] text-slate-500">Código de Confirmación:</span>
-                <div className="flex items-center justify-between mt-0.5 bg-white p-2 rounded-xl border border-slate-200 font-mono text-sm font-bold text-slate-900">
-                  <span>{receiptData.code}</span>
-                  <button
-                    type="button"
-                    onClick={copyReceiptCode}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-sans flex items-center gap-1 cursor-pointer"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                    {copiedReceipt ? "¡Copiado!" : "Copiar"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex justify-between text-xs text-slate-600 pt-1">
-                <span className="text-slate-400">Fecha y hora:</span>
-                <span className="font-semibold text-slate-700">{receiptData.timestamp}</span>
-              </div>
-
-              <div className="flex justify-between text-xs text-slate-600">
-                <span className="text-slate-400">Privacidad:</span>
-                <span className="font-bold text-emerald-700">DNI disociado (Voto Secreto)</span>
-              </div>
+            {/* Mensaje de Confirmación Limpio sin Códigos */}
+            <div className="mt-5 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs sm:text-sm font-medium space-y-1">
+              <p className="font-bold text-emerald-950 flex items-center justify-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                Tu voto ha sido depositado en la urna digital
+              </p>
+              <p className="text-[11px] text-emerald-800">
+                Registrado el {receiptData.timestamp} • Voto 100% Secreto y Anónimo
+              </p>
             </div>
 
             <div className="mt-6">
