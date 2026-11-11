@@ -14,7 +14,6 @@ import {
   RefreshCw,
   FileCheck2,
   Copy,
-  ExternalLink,
   UserCheck,
   KeyRound,
   LogOut,
@@ -120,7 +119,7 @@ export default function Home() {
         triggerConfetti();
 
         setReceiptData({
-          code: data.receiptCode || "JP26-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+          code: data.receiptCode || "JP26-REGISTRADO",
           timestamp: new Date().toLocaleString("es-PE", {
             dateStyle: "medium",
             timeStyle: "short",
@@ -327,7 +326,7 @@ export default function Home() {
               <div className="mt-3 pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-600 font-medium">
                 <div className="flex items-center gap-1.5 text-blue-900">
                   <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span><strong>Regla de ratificación:</strong> Solo puedes ratificar con <strong>"Sí"</strong> a un solo candidato.</span>
+                  <span><strong>Regla de ratificación:</strong> Solo puedes ratificar con <strong>&quot;Sí&quot;</strong> a un solo candidato.</span>
                 </div>
                 <div className="flex items-center gap-1 text-slate-500 text-[11px]">
                   <Lock className="w-3 h-3 text-emerald-600 shrink-0" />
@@ -384,7 +383,7 @@ export default function Home() {
                   Candidatos
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Selecciona tu ratificación. Al ratificar con <strong>"Sí"</strong> a uno, el otro se bloquea automáticamente en esa opción.
+                  Selecciona tu ratificación. Al ratificar con <strong>&quot;Sí&quot;</strong> a uno, el otro se bloquea automáticamente en esa opción.
                 </p>
               </div>
 
@@ -444,7 +443,7 @@ export default function Home() {
                   {cand2Vote === "si" && (
                     <div className="mt-3 p-2 bg-slate-100 border border-slate-200 rounded-lg text-[11px] text-slate-500 flex items-center gap-1.5 font-medium">
                       <Ban className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>Opción "Sí" bloqueada (Ya ratificaste a Vanessa Saire)</span>
+                      <span>Opción &quot;Sí&quot; bloqueada (Ya ratificaste a Vanessa Saire)</span>
                     </div>
                   )}
 
@@ -535,7 +534,7 @@ export default function Home() {
                   {cand1Vote === "si" && (
                     <div className="mt-3 p-2 bg-slate-100 border border-slate-200 rounded-lg text-[11px] text-slate-500 flex items-center gap-1.5 font-medium">
                       <Ban className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>Opción "Sí" bloqueada (Ya ratificaste a Leonardo Vásquez)</span>
+                      <span>Opción &quot;Sí&quot; bloqueada (Ya ratificaste a Leonardo Vásquez)</span>
                     </div>
                   )}
 

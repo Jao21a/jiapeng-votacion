@@ -83,9 +83,10 @@ export async function POST(req: NextRequest) {
         },
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     return NextResponse.json(
-      { success: false, message: error?.message || "Error al obtener resultados" },
+      { success: false, message: err?.message || "Error al obtener resultados" },
       { status: 500 }
     );
   }

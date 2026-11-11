@@ -171,9 +171,10 @@ export async function POST(req: Request) {
       timestamp: new Date().toISOString(),
       message: "¡Voto registrado con éxito!",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     return NextResponse.json(
-      { success: false, message: error?.message || "Ocurrió un error inesperado al procesar el voto." },
+      { success: false, message: err?.message || "Ocurrió un error inesperado al procesar el voto." },
       { status: 500 }
     );
   }
