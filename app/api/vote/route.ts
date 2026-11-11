@@ -3,6 +3,17 @@ import { getSupabaseAdmin, hashDni } from "@/lib/supabase";
 
 export async function POST(req: Request) {
   try {
+    // 0. Cierre oficial del proceso electoral (Horario límite: 6:00 p.m.)
+    return NextResponse.json(
+      {
+        success: false,
+        closed: true,
+        message:
+          "El proceso de votación ha finalizado oficialmente (horario límite: 6:00 p.m.). Muchas gracias por su tiempo y participación. Los resultados se darán a conocer en un siguiente comunicado.",
+      },
+      { status: 403 }
+    );
+
     const body = await req.json();
     const { dni, cand1, cand2 } = body;
 

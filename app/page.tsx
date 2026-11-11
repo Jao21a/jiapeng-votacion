@@ -2,24 +2,21 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import confetti from "canvas-confetti";
 import {
   ShieldCheck,
   Lock,
   CheckCircle2,
   XCircle,
-  AlertCircle,
-  Vote,
   BarChart3,
   RefreshCw,
-  UserCheck,
   KeyRound,
   LogOut,
   Printer,
-  Ban,
   Users,
   Download,
   Search,
+  Clock,
+  Megaphone,
 } from "lucide-react";
 
 interface VoteResults {
@@ -30,20 +27,6 @@ interface VoteResults {
 }
 
 export default function Home() {
-  // Estado del formulario de votación
-  const [dni, setDni] = useState("");
-  const [cand1Vote, setCand1Vote] = useState<"si" | "no" | null>(null);
-  const [cand2Vote, setCand2Vote] = useState<"si" | "no" | null>(null);
-
-  // Estados de proceso y feedback
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [needsSetup, setNeedsSetup] = useState(false);
-  const [receiptData, setReceiptData] = useState<{
-    code: string;
-    timestamp: string;
-  } | null>(null);
-
   // Estados de Administración (Protegido por código)
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminCodeInput, setAdminCodeInput] = useState("");
@@ -73,115 +56,6 @@ export default function Home() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  // Validaciones de formulario
-  const isDniValid = dni.trim().length === 8 && /^\d+$/.test(dni.trim());
-  const isFormComplete = isDniValid && (cand1Vote !== null || cand2Vote !== null);
-
-  // Lógica de exclusión mutua para la opción 'Sí'
-  const handleSelectCand1 = (choice: "si" | "no") => {
-    setCand1Vote(choice);
-    setErrorMessage(null);
-    if (choice === "si") {
-      // Al ratificar al Candidato 1, la Candidata 2 queda automáticamente anulada/no
-      setCand2Vote("no");
-    }
-  };
-
-  const handleSelectCand2 = (choice: "si" | "no") => {
-    setCand2Vote(choice);
-    setErrorMessage(null);
-    if (choice === "si") {
-      // Al ratificar a la Candidata 2, el Candidato 1 queda automáticamente anulado/no
-      setCand1Vote("no");
-    }
-  };
-
-  // Manejar envío del voto
-  const handleSubmitVote = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setNeedsSetup(false);
-
-    if (!isDniValid) {
-      setErrorMessage("Por favor ingresa un número de DNI válido de 8 dígitos.");
-      return;
-    }
-    const payloadCand1 = cand1Vote || "no";
-    const payloadCand2 = cand2Vote || "no";
-
-    if (!cand1Vote && !cand2Vote) {
-      setErrorMessage("Por favor selecciona al menos un candidato.");
-      return;
-    }
-
-    if (cand1Vote === "si" && cand2Vote === "si") {
-      setErrorMessage("Solo puedes ratificar con 'Sí' a un candidato.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/vote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dni: dni.trim(),
-          cand1: payloadCand1,
-          cand2: payloadCand2,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        // Lanzar animación de confeti
-        triggerConfetti();
-
-        setReceiptData({
-          code: data.receiptCode || "JP26-REGISTRADO",
-          timestamp: new Date().toLocaleString("es-PE", {
-            dateStyle: "medium",
-            timeStyle: "short",
-          }),
-        });
-
-        // Limpiar campos del formulario
-        setDni("");
-        setCand1Vote(null);
-        setCand2Vote(null);
-      } else {
-        if (data.needsSetup) {
-          setNeedsSetup(true);
-        }
-        setErrorMessage(data.message || "No se pudo registrar el voto.");
-      }
-    } catch {
-      setErrorMessage("Error de conexión al registrar el voto. Verifica tu internet.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const triggerConfetti = () => {
-    const count = 180;
-    const defaults = { origin: { y: 0.65 } };
-
-    function fire(particleRatio: number, opts: confetti.Options) {
-      confetti({
-        ...defaults,
-        ...opts,
-        particleCount: Math.floor(count * particleRatio),
-      });
-    }
-
-    fire(0.25, { spread: 26, startVelocity: 55 });
-    fire(0.2, { spread: 60 });
-    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-    fire(0.1, { spread: 120, startVelocity: 45 });
   };
 
   // Autenticación de Administrador
@@ -295,350 +169,125 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Distintivo de Seguridad */}
-            <div className="hidden sm:flex items-center gap-1.5 bg-blue-950/60 border border-blue-400/30 px-3 py-1.5 rounded-full text-[11px] font-semibold text-blue-200">
-              <Lock className="w-3 h-3 text-emerald-400" />
-              1 Voto por DNI • Voto Secreto
+            {/* Distintivo de Cierre de Votación */}
+            <div className="hidden sm:flex items-center gap-1.5 bg-amber-500/20 border border-amber-300/40 px-3.5 py-1.5 rounded-full text-xs font-bold text-amber-200">
+              <Clock className="w-3.5 h-3.5 text-amber-300" />
+              Votación Finalizada (6:00 p.m.)
             </div>
           </div>
         </header>
 
-        {/* ALERTA DE CONFIGURACIÓN SUPABASE */}
-        {needsSetup && (
-          <div className="bg-amber-50 border-b border-amber-200 p-4 text-amber-900 text-sm flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-bold text-amber-950">
-                Paso inicial requerido en Supabase
+        {/* ========================================================= */}
+        {/* VISTA: MENSAJE OFICIAL DE CIERRE DE VOTACIÓN (6:00 P.M.)  */}
+        {/* ========================================================= */}
+        {!isAdminAuthenticated && (
+          <div className="p-6 sm:p-10 space-y-8">
+            {/* Cabecera del Cierre con Icono Oficial */}
+            <div className="text-center space-y-3">
+              <div className="w-20 h-20 bg-blue-50 text-blue-900 rounded-3xl flex items-center justify-center mx-auto ring-8 ring-blue-50/60 shadow-sm">
+                <Clock className="w-10 h-10 text-blue-700 stroke-[2.2]" />
+              </div>
+
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-900 bg-amber-100 border border-amber-300 px-3 py-1 rounded-full">
+                <Lock className="w-3.5 h-3.5 text-amber-700" />
+                Votación Finalizada a las 6:00 p.m.
+              </span>
+
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Proceso de Votación Concluido
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+                El plazo oficial para la emisión del voto de los trabajadores culminó hoy a las <strong>6:00 p.m.</strong>
               </p>
-              <p className="text-xs text-amber-800 mt-1">
-                Abre el SQL Editor de Supabase y ejecuta el archivo{" "}
-                <code className="bg-amber-100 px-1 py-0.5 rounded font-mono font-bold text-amber-950">
-                  supabase_schema.sql
-                </code>{" "}
-                para inicializar las tablas.
-              </p>
+            </div>
+
+            {/* Tarjeta de Agradecimiento y Próximos Pasos */}
+            <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 border-2 border-blue-100 rounded-3xl p-6 sm:p-7 text-center space-y-4 shadow-sm">
+              <div className="w-10 h-10 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md shadow-blue-600/20">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+
+              <div>
+                <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                  ¡Muchas gracias por su valioso tiempo y participación!
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2 max-w-lg mx-auto">
+                  Agradecemos a todos los trabajadores de <strong>Jiapeng</strong> por haber sido parte de este importante proceso electoral para la conformación del <strong>Comité de Intervención frente al Hostigamiento Sexual 2026</strong>.
+                </p>
+              </div>
+
+              {/* Mensaje de Próximo Comunicado */}
+              <div className="mt-4 pt-4 border-t border-blue-100/80 bg-white/80 rounded-2xl p-4 flex items-center justify-center gap-3 text-xs sm:text-sm font-bold text-blue-950 border border-blue-100">
+                <Megaphone className="w-5 h-5 text-blue-600 shrink-0" />
+                <span>
+                  Los resultados oficiales del escrutinio se darán a conocer en un <strong>siguiente comunicado</strong>.
+                </span>
+              </div>
+            </div>
+
+            {/* Presentación de las Candidaturas Presentadas */}
+            <div className="space-y-3">
+              <div className="text-center">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Candidaturas del Proceso Electoral
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Candidato 1 */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center">
+                  <div
+                    className="relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-slate-200 border border-slate-200 shadow-inner mx-auto mb-3"
+                    style={{ aspectRatio: "4/5", maxHeight: "170px", width: "100%", position: "relative" }}
+                  >
+                    <Image
+                      src="/candidates/leo-voto-hd.jpg"
+                      alt="Leonardo Frank Vásquez"
+                      fill
+                      className="object-cover object-top"
+                      sizes="200px"
+                      unoptimized
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-blue-700 uppercase bg-blue-100/70 px-2 py-0.5 rounded">
+                    Candidato 1
+                  </span>
+                  <h5 className="text-xs sm:text-sm font-extrabold text-slate-900 mt-1">
+                    Leonardo Frank Vásquez
+                  </h5>
+                  <p className="text-[11px] text-slate-500 font-medium">Auditor interno</p>
+                </div>
+
+                {/* Candidata 2 */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center">
+                  <div
+                    className="relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-slate-200 border border-slate-200 shadow-inner mx-auto mb-3"
+                    style={{ aspectRatio: "4/5", maxHeight: "170px", width: "100%", position: "relative" }}
+                  >
+                    <Image
+                      src="/candidates/vanesa-voto-hd.jpg"
+                      alt="Vanessa Saire"
+                      fill
+                      className="object-cover object-[52%_15%]"
+                      sizes="200px"
+                      unoptimized
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-indigo-700 uppercase bg-indigo-100/70 px-2 py-0.5 rounded">
+                    Candidata 2
+                  </span>
+                  <h5 className="text-xs sm:text-sm font-extrabold text-slate-900 mt-1">
+                    Vanessa Saire
+                  </h5>
+                  <p className="text-[11px] text-slate-500 font-medium">Asistente administrativa</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* ========================================================= */}
-        {/* VISTA 1: FORMULARIO DE VOTACIÓN                           */}
-        {/* ========================================================= */}
-        {!isAdminAuthenticated && (
-          <div className="p-6 sm:p-8 space-y-6">
-            {/* Texto Descriptivo Oficial */}
-            <section className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 sm:p-5 text-center sm:text-left">
-              <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-2 leading-snug">
-                Elección de representantes de los trabajadores ante el Comité de Intervención frente al Hostigamiento Sexual
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Se presentaron dos candidaturas. Vota por cada candidato para ratificarlo como representante. El voto es <strong>individual y reservado</strong>: los demás no ven lo que elegiste y <strong>solo puedes votar una vez</strong>.
-              </p>
-
-              {/* Indicación de Exclusión Mutua */}
-              <div className="mt-3 pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-600 font-medium">
-                <div className="flex items-center gap-1.5 text-blue-900">
-                  <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
-                  <span><strong>Regla de ratificación:</strong> Solo puedes ratificar con <strong>&quot;Sí&quot;</strong> a un solo candidato.</span>
-                </div>
-                <div className="flex items-center gap-1 text-slate-500 text-[11px]">
-                  <Lock className="w-3 h-3 text-emerald-600 shrink-0" />
-                  <span>Voto 100% Anónimo</span>
-                </div>
-              </div>
-            </section>
-
-            <form onSubmit={handleSubmitVote} className="space-y-7">
-              {/* PASO 1: DNI */}
-              <div className="bg-white border-2 border-slate-200 rounded-2xl p-5 hover:border-blue-400 focus-within:border-blue-600 transition-all shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                  <label htmlFor="dni-input" className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <UserCheck className="w-4 h-4 text-blue-600" />
-                    Paso 1: Ingresa tu número de DNI
-                  </label>
-                  <span
-                    className={`text-xs px-2.5 py-0.5 rounded-full font-bold transition-all ${
-                      isDniValid
-                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                        : dni.length > 0
-                        ? "bg-amber-100 text-amber-800 border border-amber-300"
-                        : "bg-slate-100 text-slate-500"
-                    }`}
-                  >
-                    {isDniValid ? "✓ DNI Válido (8 dígitos)" : `${dni.length}/8 dígitos`}
-                  </span>
-                </div>
-
-                <input
-                  id="dni-input"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={8}
-                  value={dni}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, "");
-                    if (val.length <= 8) setDni(val);
-                    if (errorMessage) setErrorMessage(null);
-                  }}
-                  placeholder="Ej. 74839201"
-                  className="w-full text-lg sm:text-xl font-mono tracking-widest px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 placeholder:text-slate-400 transition-all text-center sm:text-left"
-                  required
-                />
-                <p className="text-[11px] text-slate-400 mt-2">
-                  * Solo se permite una emisión de voto por cada número de DNI.
-                </p>
-              </div>
-
-              {/* PASO 2: CANDIDATOS */}
-              <div className="text-center pt-1">
-                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                  Candidatos
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Selecciona tu ratificación. Al ratificar con <strong>&quot;Sí&quot;</strong> a uno, el otro se bloquea automáticamente en esa opción.
-                </p>
-              </div>
-
-              {/* GRID DE CANDIDATOS */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* CANDIDATO 1: Leonardo Frank Vásquez */}
-                <div
-                  className={`relative flex flex-col justify-between bg-white rounded-2xl border-2 transition-all p-5 shadow-sm hover:shadow-md ${
-                    cand1Vote === "si"
-                      ? "border-emerald-500 ring-4 ring-emerald-500/10"
-                      : cand1Vote === "no"
-                      ? "border-slate-300 bg-slate-50/50"
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px] font-bold tracking-wider text-blue-700 bg-blue-50 border border-blue-200/80 px-2.5 py-0.5 rounded-full uppercase">
-                        CANDIDATO 1
-                      </span>
-                      {cand1Vote === "si" && (
-                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Ratificado
-                        </span>
-                      )}
-                      {cand1Vote === "no" && (
-                        <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                          <XCircle className="w-3.5 h-3.5" /> No ratificado
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Foto en Máxima Resolución Original */}
-                    <div
-                      className="relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group"
-                      style={{ aspectRatio: "4/5", maxHeight: "240px", width: "100%", position: "relative" }}
-                    >
-                      <Image
-                        src="/candidates/leo-voto-hd.jpg"
-                        alt="Leonardo Frank Vásquez"
-                        fill
-                        className="object-cover object-top group-hover:scale-105 transition-transform duration-300"
-                        sizes="(max-width: 640px) 100vw, 400px"
-                        unoptimized
-                        priority
-                      />
-                    </div>
-
-                    <div className="mt-4 text-center sm:text-left">
-                      <h4 className="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">
-                        Leonardo Frank Vásquez
-                      </h4>
-                      <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                        Auditor interno
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Aviso si la opción 'Sí' está bloqueada por haber ratificado a Vanessa */}
-                  {cand2Vote === "si" && (
-                    <div className="mt-3 p-2 bg-slate-100 border border-slate-200 rounded-lg text-[11px] text-slate-500 flex items-center gap-1.5 font-medium">
-                      <Ban className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>Opción &quot;Sí&quot; bloqueada (Ya ratificaste a Vanessa Saire)</span>
-                    </div>
-                  )}
-
-                  {/* Botones de Opción */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={cand2Vote === "si"}
-                      onClick={() => handleSelectCand1("si")}
-                      className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all border flex items-center justify-center gap-1.5 ${
-                        cand2Vote === "si"
-                          ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-40 shadow-none"
-                          : cand1Vote === "si"
-                          ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/25 scale-[1.02] cursor-pointer"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 cursor-pointer"
-                      }`}
-                    >
-                      <CheckCircle2 className={`w-4 h-4 ${cand1Vote === "si" ? "text-white" : cand2Vote === "si" ? "text-slate-400" : "text-emerald-600"}`} />
-                      Sí, lo ratifico
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSelectCand1("no")}
-                      className={`py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all border flex items-center justify-center gap-1.5 cursor-pointer ${
-                        cand1Vote === "no"
-                          ? "bg-slate-700 text-white border-slate-700 shadow-md shadow-slate-700/20 scale-[1.02]"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-rose-50 hover:border-rose-300"
-                      }`}
-                    >
-                      <XCircle className={`w-4 h-4 ${cand1Vote === "no" ? "text-white" : "text-rose-600"}`} />
-                      No
-                    </button>
-                  </div>
-                </div>
-
-                {/* CANDIDATA 2: Vanessa Saire */}
-                <div
-                  className={`relative flex flex-col justify-between bg-white rounded-2xl border-2 transition-all p-5 shadow-sm hover:shadow-md ${
-                    cand2Vote === "si"
-                      ? "border-emerald-500 ring-4 ring-emerald-500/10"
-                      : cand2Vote === "no"
-                      ? "border-slate-300 bg-slate-50/50"
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px] font-bold tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 rounded-full uppercase">
-                        CANDIDATA 2
-                      </span>
-                      {cand2Vote === "si" && (
-                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Ratificada
-                        </span>
-                      )}
-                      {cand2Vote === "no" && (
-                        <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                          <XCircle className="w-3.5 h-3.5" /> No ratificada
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Foto en Máxima Resolución Original */}
-                    <div
-                      className="relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group"
-                      style={{ aspectRatio: "4/5", maxHeight: "240px", width: "100%", position: "relative" }}
-                    >
-                      <Image
-                        src="/candidates/vanesa-voto-hd.jpg"
-                        alt="Vanessa Saire"
-                        fill
-                        className="object-cover object-[52%_15%] group-hover:scale-105 transition-transform duration-300"
-                        sizes="(max-width: 640px) 100vw, 400px"
-                        unoptimized
-                        priority
-                      />
-                    </div>
-
-                    <div className="mt-4 text-center sm:text-left">
-                      <h4 className="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">
-                        Vanessa Saire
-                      </h4>
-                      <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                        Asistente administrativa
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Aviso si la opción 'Sí' está bloqueada por haber ratificado a Leonardo */}
-                  {cand1Vote === "si" && (
-                    <div className="mt-3 p-2 bg-slate-100 border border-slate-200 rounded-lg text-[11px] text-slate-500 flex items-center gap-1.5 font-medium">
-                      <Ban className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>Opción &quot;Sí&quot; bloqueada (Ya ratificaste a Leonardo Vásquez)</span>
-                    </div>
-                  )}
-
-                  {/* Botones de Opción */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={cand1Vote === "si"}
-                      onClick={() => handleSelectCand2("si")}
-                      className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all border flex items-center justify-center gap-1.5 ${
-                        cand1Vote === "si"
-                          ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-40 shadow-none"
-                          : cand2Vote === "si"
-                          ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/25 scale-[1.02] cursor-pointer"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 cursor-pointer"
-                      }`}
-                    >
-                      <CheckCircle2 className={`w-4 h-4 ${cand2Vote === "si" ? "text-white" : cand1Vote === "si" ? "text-slate-400" : "text-emerald-600"}`} />
-                      Sí, la ratifico
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSelectCand2("no")}
-                      className={`py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all border flex items-center justify-center gap-1.5 cursor-pointer ${
-                        cand2Vote === "no"
-                          ? "bg-slate-700 text-white border-slate-700 shadow-md shadow-slate-700/20 scale-[1.02]"
-                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-rose-50 hover:border-rose-300"
-                      }`}
-                    >
-                      <XCircle className={`w-4 h-4 ${cand2Vote === "no" ? "text-white" : "text-rose-600"}`} />
-                      No
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* ALERTA DE ERROR */}
-              {errorMessage && (
-                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-center gap-3">
-                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                  <span className="font-semibold">{errorMessage}</span>
-                </div>
-              )}
-
-              {/* BOTÓN ENVIAR VOTO */}
-              <div className="pt-2 text-center">
-                <button
-                  type="submit"
-                  disabled={loading || !isFormComplete}
-                  className={`w-full py-4 px-6 rounded-2xl font-black text-base sm:text-lg transition-all flex items-center justify-center gap-2 shadow-lg ${
-                    isFormComplete && !loading
-                      ? "bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white shadow-blue-600/30 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-                      : "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
-                  }`}
-                >
-                  {loading ? (
-                    <>
-                      <RefreshCw className="w-5 h-5 animate-spin" />
-                      Procesando voto anónimo...
-                    </>
-                  ) : (
-                    <>
-                      <Vote className="w-5 h-5" />
-                      Enviar voto
-                    </>
-                  )}
-                </button>
-
-                {!isFormComplete && (
-                  <p className="text-xs text-slate-400 mt-2">
-                    {!isDniValid
-                      ? "Ingresa tu DNI de 8 dígitos para habilitar el envío."
-                      : !cand1Vote || !cand2Vote
-                      ? "Selecciona a qué candidato deseas ratificar para habilitar el envío."
-                      : ""}
-                  </p>
-                )}
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* ========================================================= */}
+                {/* ========================================================= */}
         {/* VISTA 2: PANEL DE ADMINISTRACIÓN / ESCRUTINIO EXCLUSIVO     */}
         {/* ========================================================= */}
         {isAdminAuthenticated && (
@@ -994,45 +643,6 @@ export default function Home() {
           )}
         </footer>
       </div>
-
-      {/* MODAL DE CONFIRMACIÓN DE VOTO PARA EL VOTANTE */}
-      {receiptData && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 text-center relative border border-slate-100 animate-in fade-in zoom-in-95 duration-300">
-            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 ring-8 ring-emerald-50">
-              <CheckCircle2 className="w-12 h-12 stroke-[2.5]" />
-            </div>
-
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-              ¡Voto Registrado con Éxito!
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
-              Tu participación en el <strong>Proceso Electoral Jiapeng 2026</strong> ha sido contabilizada de manera <strong>100% anónima e irreversible</strong>.
-            </p>
-
-            {/* Mensaje de Confirmación Limpio sin Códigos */}
-            <div className="mt-5 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs sm:text-sm font-medium space-y-1">
-              <p className="font-bold text-emerald-950 flex items-center justify-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                Tu voto ha sido depositado en la urna digital
-              </p>
-              <p className="text-[11px] text-emerald-800">
-                Registrado el {receiptData.timestamp} • Voto 100% Secreto y Anónimo
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => setReceiptData(null)}
-                className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all shadow-md shadow-blue-600/20 cursor-pointer"
-              >
-                Finalizar y Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MODAL DE INGRESO PARA EL USUARIO ADMINISTRADOR */}
       {showAdminLogin && (
